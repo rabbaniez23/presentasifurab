@@ -1,0 +1,14 @@
+{{- range $name, $config := .Values.services }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name | kebabcase }}-service
+spec:
+  selector:
+    app: {{ $name | kebabcase }}-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: {{ $config.port }}
+{{- end }}

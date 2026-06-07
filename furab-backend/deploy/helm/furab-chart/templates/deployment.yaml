@@ -1,0 +1,32 @@
+{{- range $name, $config := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | kebabcase }}-service
+spec:
+  replicas: {{ $config.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $name | kebabcase }}-service
+  template:
+    metadata:
+      labels:
+        app: {{ $name | kebabcase }}-service
+    spec:
+      containers:
+        - name: {{ $name | kebabcase }}-service
+          image: "{{ $.Values.image.registry }}/{{ $name | kebabcase }}-service:{{ $.Values.image.tag }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: {{ $config.port }}
+          env:
+            - name: DATABASE_HOST
+              value: {{ $.Values.database.host | quote }}
+            - name: DATABASE_USER
+              value: {{ $.Values.database.user | quote }}
+            - name: KAFKA_BROKERS
+              value: {{ $.Values.kafka.brokers | quote }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+{{- end }}

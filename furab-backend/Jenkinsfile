@@ -1,0 +1,296 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'nrrbni'
+        KUBE_NAMESPACE  = 'furab'
+        GO_VERSION      = '1.22'
+    }
+
+    stages {
+        // Stage 1: Checkout repository + detect changed services
+        stage('Checkout') {
+            steps {
+                checkout scm
+                powershell 'Write-Host "Checked out branch: $env:GIT_BRANCH"'
+                script {
+                    def result = powershell(
+                        returnStdout: true,
+                        script: '''
+                            $prevCommit = if ($env:GIT_PREVIOUS_SUCCESSFUL_COMMIT) { $env:GIT_PREVIOUS_SUCCESSFUL_COMMIT } elseif ($env:GIT_PREVIOUS_COMMIT) { $env:GIT_PREVIOUS_COMMIT } else { $null }
+
+                            if (-not $prevCommit) {
+                                Write-Output "BUILD_ALL"
+                                return
+                            }
+
+                            $changedFiles = git diff --name-only $prevCommit HEAD 2>&1
+                            if ($LASTEXITCODE -ne 0) {
+                                Write-Output "BUILD_ALL"
+                                return
+                            }
+
+                            Write-Host "=== Changed files ==="
+                            $changedFiles | ForEach-Object { Write-Host "  $_" }
+
+                            $infraPatterns = @("^Jenkinsfile", "^furab-backend/Jenkinsfile", "^furab-backend/shared/", "^furab-backend/gateway/", "^furab-backend/deploy/", "^furab-backend/scripts/", "^furab-backend/tests/", "^furab-backend/go\\.work")
+                            foreach ($pattern in $infraPatterns) {
+                                if ($changedFiles | Where-Object { $_ -match $pattern }) {
+                                    Write-Host "Infrastructure change detected ($pattern) - building ALL"
+                                    Write-Output "BUILD_ALL"
+                                    return
+                                }
+                            }
+
+                            $changedServices = @()
+                            foreach ($file in $changedFiles) {
+                                if ($file -match "^furab-backend/services/([^/]+)/") {
+                                    $changedServices += $Matches[1]
+                                }
+                            }
+                            $changedServices = $changedServices | Select-Object -Unique
+
+                            if ($changedServices.Count -eq 0) {
+                                Write-Output "BUILD_ALL"
+                                return
+                            }
+
+                            Write-Host "=== Changed services: $($changedServices -join ', ') ==="
+                            Write-Output ($changedServices -join ',')
+                        '''
+                    ).trim()
+
+                    if (result == 'BUILD_ALL') {
+                        env.BUILD_ALL = 'true'
+                        env.CHANGED_SERVICES = ''
+                        echo ">>> MODE: BUILD ALL SERVICES <<<"
+                    } else {
+                        env.BUILD_ALL = 'false'
+                        env.CHANGED_SERVICES = result
+                        echo ">>> MODE: SELECTIVE BUILD - ${result} <<<"
+                    }
+                }
+            }
+        }
+
+        // Stage 2: Unit Tests (no DB, no external services)
+        stage('Unit Tests') {
+            steps {
+                powershell '''
+                    Write-Host "Running unit tests..."
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        $services = Get-ChildItem -Path services -Directory
+                    } else {
+                        $names = $env:CHANGED_SERVICES -split ","
+                        $services = $names | ForEach-Object { Get-Item "services/$_" } | Where-Object { $_ -ne $null }
+                        Write-Host "Selective build: $($names -join ', ')"
+                    }
+
+                    foreach ($s in $services) {
+                        Write-Host "=== Unit Testing: $($s.Name) ==="
+                        Set-Location $s.FullName
+                        go test ./test/unit/... -v -cover -coverprofile=coverage.out
+                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                        Set-Location ../..
+                    }
+                '''
+            }
+            post {
+                always {
+                    powershell 'Write-Host "Unit test results published"'
+                }
+            }
+        }
+
+        // Stage 3: Lint & Vet (static analysis)
+        stage('Lint/Vet') {
+            steps {
+                powershell '''
+                    Write-Host "Running go vet..."
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        $services = Get-ChildItem -Path services -Directory
+                    } else {
+                        $names = $env:CHANGED_SERVICES -split ","
+                        $services = $names | ForEach-Object { Get-Item "services/$_" } | Where-Object { $_ -ne $null }
+                    }
+
+                    foreach ($s in $services) {
+                        Write-Host "=== Vetting: $($s.Name) ==="
+                        Set-Location $s.FullName
+                        go vet ./...
+                        Set-Location ../..
+                    }
+                '''
+            }
+        }
+
+        // Stage 4: Build Docker Images (local)
+        stage('Build Image') {
+            steps {
+                powershell '''
+                    Write-Host "Building Docker images..."
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        $services = Get-ChildItem -Path services -Directory
+                    } else {
+                        $names = $env:CHANGED_SERVICES -split ","
+                        $services = $names | ForEach-Object { Get-Item "services/$_" } | Where-Object { $_ -ne $null }
+                    }
+
+                    foreach ($s in $services) {
+                        Write-Host "=== Building: $($s.Name) ==="
+                        docker build -t "$env:DOCKER_REGISTRY/$($s.Name):$env:BUILD_NUMBER" -t "$env:DOCKER_REGISTRY/$($s.Name):latest" -f "$($s.FullName)/Dockerfile" .
+                    }
+                '''
+            }
+        }
+
+        // Stage 5: Functional Tests (requires DB and infrastructure)
+        stage('Functional Tests') {
+            steps {
+                powershell '''
+                    Write-Host "Starting test infrastructure..."
+                    docker compose -f deploy/docker/docker-compose.yml up -d postgres kafka rabbitmq redis
+
+                    Write-Host "Waiting for services to be ready..."
+                    Start-Sleep -Seconds 15
+
+                    Write-Host "Running functional tests..."
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        $services = Get-ChildItem -Path services -Directory
+                    } else {
+                        $names = $env:CHANGED_SERVICES -split ","
+                        $services = $names | ForEach-Object { Get-Item "services/$_" } | Where-Object { $_ -ne $null }
+                    }
+
+                    foreach ($s in $services) {
+                        Write-Host "=== Functional Testing: $($s.Name) ==="
+                        Set-Location $s.FullName
+                        go test ./test/functional/... -v -tags=functional
+                        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+                        Set-Location ../..
+                    }
+                '''
+            }
+            post {
+                always {
+                    powershell 'docker compose -f deploy/docker/docker-compose.yml down'
+                }
+            }
+        }
+
+        // Stage 6: Push Docker Images to Registry
+        stage('Push Image') {
+            when {
+                branch 'main'
+            }
+            steps {
+                powershell '''
+                    $env:DOCKER_CONFIG = "C:\\Users\\HP\\.docker"
+                    Write-Host "Pushing Docker images..."
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        $services = Get-ChildItem -Path services -Directory
+                    } else {
+                        $names = $env:CHANGED_SERVICES -split ","
+                        $services = $names | ForEach-Object { Get-Item "services/$_" } | Where-Object { $_ -ne $null }
+                    }
+
+                    foreach ($s in $services) {
+                        Write-Host "=== Pushing: $($s.Name) ==="
+                        docker push "$env:DOCKER_REGISTRY/$($s.Name):$env:BUILD_NUMBER"
+                        docker push "$env:DOCKER_REGISTRY/$($s.Name):latest"
+                    }
+                '''
+            }
+        }
+
+        // Stage 7: Deploy to Kubernetes
+        stage('Deploy to Kubernetes') {
+            when {
+                branch 'main'
+            }
+            steps {
+                powershell '''
+                    $env:KUBECONFIG = "C:\\Users\\HP\\.kube\\config"
+
+                    kubectl apply -f deploy/kubernetes/namespace.yaml
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        Write-Host "Deploying ALL services via Helm..."
+                        helm upgrade --install furab deploy/helm/furab-chart/ --namespace $env:KUBE_NAMESPACE --set image.tag=$env:BUILD_NUMBER --timeout 300s
+                    } else {
+                        Write-Host "Deploying CHANGED services only..."
+                        $names = $env:CHANGED_SERVICES -split ","
+                        foreach ($svc in $names) {
+                            Write-Host "=== Updating: $svc ==="
+                            kubectl set image deployment/$svc $svc="$env:DOCKER_REGISTRY/${svc}:$env:BUILD_NUMBER" -n $env:KUBE_NAMESPACE 2>&1
+                            if ($LASTEXITCODE -ne 0) {
+                                Write-Host "Deployment $svc not found, falling back to full Helm deploy..."
+                                helm upgrade --install furab deploy/helm/furab-chart/ --namespace $env:KUBE_NAMESPACE --set image.tag=$env:BUILD_NUMBER --timeout 300s
+                                break
+                            }
+                        }
+                    }
+                '''
+            }
+        }
+
+        // Stage 8: Verify Deployment
+        stage('Verify') {
+            when {
+                branch 'main'
+            }
+            steps {
+                powershell '''
+                    $env:KUBECONFIG = "C:\\Users\\HP\\.kube\\config"
+                    Write-Host "Verifying deployment..."
+                    Start-Sleep -Seconds 10
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        $services = @("auth-service", "otp-service", "user-service", "driver-service", "ride-order-service", "food-order-service", "cart-service", "matching-service", "payment-service", "wallet-service", "settlement-service", "pricing-service", "promo-service", "location-service", "chat-service", "notification-service", "email-service", "emergency-service", "merchant-service", "menu-service", "rating-service", "review-service", "audit-log-service")
+                    } else {
+                        $services = $env:CHANGED_SERVICES -split ","
+                    }
+
+                    $failed = 0
+                    foreach ($s in $services) {
+                        $result = kubectl get deployment $s -n $env:KUBE_NAMESPACE --no-headers 2>&1
+                        if ($LASTEXITCODE -eq 0) {
+                            Write-Host "=== $s : DEPLOYED ==="
+                        } else {
+                            Write-Host "=== $s : NOT FOUND ==="
+                            $failed++
+                        }
+                    }
+
+                    if ($failed -gt 0) {
+                        Write-Host "$failed service(s) not found in cluster!"
+                        exit 1
+                    }
+
+                    if ($env:BUILD_ALL -eq "true") {
+                        Write-Host "All 23 services successfully deployed to Kubernetes!"
+                    } else {
+                        Write-Host "Changed services verified: $($services -join ', ')"
+                    }
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
