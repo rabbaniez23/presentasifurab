@@ -156,7 +156,16 @@ export default function GoRideTrackingScreen() {
           {driverState === 'arrived' && 'Driver Tiba'}
           {driverState === 'trip' && 'Dalam Perjalanan'}
         </Text>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity 
+          style={styles.backBtn} 
+          onPress={() => navigation.navigate('EmergencySOS', {
+            service: 'GoRide',
+            driverName: driverName,
+            orderId: 'ORDER-GR-58392'
+          })}
+        >
+          <Shield color={furapColors.error} size={20} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.fullMapContainer}>

@@ -142,12 +142,24 @@ export default function GoFoodTrackingScreen() {
           {trackingState === 'arrived' && 'Driver Sampai'}
         </Text>
         
-        <TouchableOpacity 
-          style={styles.helpBtn}
-          onPress={() => setReportModalVisible(true)}
-        >
-          <Text style={styles.helpBtnText}>Bantuan</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity 
+            style={[styles.helpBtn, { marginRight: 8 }]}
+            onPress={() => setReportModalVisible(true)}
+          >
+            <Text style={styles.helpBtnText}>Bantuan</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.sosHeaderBtn}
+            onPress={() => navigation.navigate('EmergencySOS', {
+              service: 'GoFood',
+              driverName: driverName,
+              orderId: 'ORDER-GF-94827'
+            })}
+          >
+            <Shield color={furapColors.error} size={18} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Map and Info Layout (Delivering/Ordering state) */}
@@ -398,6 +410,14 @@ const styles = StyleSheet.create({
     ...furapTypography.headlineMd,
     fontSize: 12,
     color: furapColors.error,
+  },
+  sosHeaderBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(186, 26, 26, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   fullMapContainer: {
     flex: 1,

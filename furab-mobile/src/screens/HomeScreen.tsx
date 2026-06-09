@@ -387,7 +387,11 @@ export default function HomeScreen() {
             {/* Settings Options */}
             <Text style={styles.sectionTitle}>General</Text>
             <View style={styles.settingsGroup}>
-              <TouchableOpacity style={styles.settingsItem} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.settingsItem} 
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('AccountSettings')}
+              >
                 <View style={styles.settingsItemLeft}>
                   <Settings color={furapColors.primary} size={20} style={{ marginRight: 12 }} />
                   <Text style={styles.settingsItemText}>Account Settings</Text>
@@ -397,7 +401,11 @@ export default function HomeScreen() {
 
               <View style={styles.divider} />
 
-              <TouchableOpacity style={styles.settingsItem} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.settingsItem} 
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('PaymentMethods')}
+              >
                 <View style={styles.settingsItemLeft}>
                   <Wallet color={furapColors.primary} size={20} style={{ marginRight: 12 }} />
                   <Text style={styles.settingsItemText}>Payment Methods</Text>
