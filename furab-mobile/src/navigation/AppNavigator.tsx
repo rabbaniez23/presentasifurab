@@ -28,6 +28,7 @@ import PaymentStatusScreen from '../screens/PaymentStatusScreen';
 import EmergencySOSScreen from '../screens/EmergencySOSScreen';
 import AccountSettingsScreen from '../screens/profile/AccountSettingsScreen';
 import PaymentMethodsScreen from '../screens/profile/PaymentMethodsScreen';
+import GoPayTransactionHistoryScreen from '../screens/gopay/GoPayTransactionHistoryScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -66,6 +67,7 @@ export default function AppNavigator() {
         <Stack.Screen name="EmergencySOS" component={EmergencySOSScreen} />
         <Stack.Screen name="AccountSettings" component={AccountSettingsScreen} />
         <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+        <Stack.Screen name="GoPayTransactionHistory" component={GoPayTransactionHistoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

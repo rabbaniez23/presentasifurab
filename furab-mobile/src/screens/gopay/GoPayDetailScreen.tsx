@@ -76,7 +76,15 @@ export default function GoPayDetailScreen() {
         </View>
 
         {/* Transaction History Section */}
-        <Text style={styles.sectionTitle}>Riwayat Transaksi GoPay</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Riwayat Transaksi GoPay</Text>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('GoPayTransactionHistory')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.seeAllText}>Lihat Semua</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.historyCard}>
           {gopayTransactions.map((tx, index) => {
             const isIn = tx.type === 'in';
@@ -216,11 +224,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: furapColors.primary,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
   sectionTitle: {
     ...furapTypography.labelSm,
     color: furapColors.neutral,
-    marginBottom: 8,
-    marginLeft: 4,
+  },
+  seeAllText: {
+    ...furapTypography.bodyMd,
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: furapColors.secondary,
   },
   historyCard: {
     ...furapGlass.card,
