@@ -74,7 +74,12 @@ export default function OTPVerificationScreen() {
       setLoading(false);
       setToken('dummy_jwt_token_for_testing');
       setUser({ contact: contact });
-      navigation.replace('Home');
+      const role = route.params?.role || 'user';
+      if (role === 'driver') {
+        navigation.replace('DriverHome');
+      } else {
+        navigation.replace('Home');
+      }
     }, 800);
   };
 
