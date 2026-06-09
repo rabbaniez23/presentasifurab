@@ -5,13 +5,10 @@ package main
 import (
 	"log"
 	"net/http"
-	"time"
 
 	"furab-backend/gateway/api-gateway/internal/router"
 	"furab-backend/shared/config"
 	sharedlogger "furab-backend/shared/logger"
-
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
@@ -21,9 +18,6 @@ func main() {
 	logger.Info("starting api-gateway", "port", cfg.ServerPort)
 
 	r := router.NewRouter()
-	r.Use(chimiddleware.Logger)
-	r.Use(chimiddleware.Recoverer)
-	r.Use(chimiddleware.Timeout(60 * time.Second))
 
 	logger.Info("api-gateway listening", "address", cfg.ServerAddr())
 	if err := http.ListenAndServe(cfg.ServerAddr(), r); err != nil {

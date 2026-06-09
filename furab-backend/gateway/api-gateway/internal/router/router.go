@@ -6,10 +6,12 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"time"
 
 	"furab-backend/shared/utils"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 // Service registry maps service names to their base URLs.
@@ -42,6 +44,11 @@ var serviceRegistry = map[string]string{
 // NewRouter creates a new chi router with all API routes configured.
 func NewRouter() *chi.Mux {
 	r := chi.NewRouter()
+
+	// Register middleware before defining any routes
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.Timeout(60 * time.Second))
 
 	// Health check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
