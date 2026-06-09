@@ -43,7 +43,17 @@ import HelpCenterScreen from '../screens/profile/HelpCenterScreen';
 import PaymentMethodsScreen from '../screens/profile/PaymentMethodsScreen';
 
 // ==========================================
-// 6. Core / Root Screens
+// 6. Driver Screens
+// ==========================================
+import DriverHomeScreen from '../screens/driver/DriverHomeScreen';
+import DriverOrderRequestScreen from '../screens/driver/DriverOrderRequestScreen';
+import DriverNavigationScreen from '../screens/driver/DriverNavigationScreen';
+import DriverEarningsScreen from '../screens/driver/DriverEarningsScreen';
+import DriverProfileScreen from '../screens/driver/DriverProfileScreen';
+import DriverRatingScreen from '../screens/driver/DriverRatingScreen';
+
+// ==========================================
+// 7. Core / Root Screens
 // ==========================================
 import HomeScreen from '../screens/HomeScreen';
 import ActivityDetailScreen from '../screens/ActivityDetailScreen';
@@ -95,7 +105,15 @@ export default function AppNavigator() {
         <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
         <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
 
-        {/* 6. Core / Root Screens */}
+        {/* 6. Driver Screens */}
+        <Stack.Screen name="DriverHome" component={DriverHomeScreen} />
+        <Stack.Screen name="DriverOrderRequest" component={DriverOrderRequestScreen} />
+        <Stack.Screen name="DriverNavigation" component={DriverNavigationScreen} />
+        <Stack.Screen name="DriverEarnings" component={DriverEarningsScreen} />
+        <Stack.Screen name="DriverProfile" component={DriverProfileScreen} />
+        <Stack.Screen name="DriverRating" component={DriverRatingScreen} />
+
+        {/* 7. Core / Root Screens */}
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
         <Stack.Screen name="ChatRoom" component={ChatRoomScreen} />

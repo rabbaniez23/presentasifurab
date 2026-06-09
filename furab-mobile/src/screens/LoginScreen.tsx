@@ -12,6 +12,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+  const [role, setRoleState] = useState<'user' | 'driver'>('user');
 
   const handleLogin = () => {
     if (!email.trim()) {
@@ -21,10 +22,13 @@ export default function LoginScreen() {
     setLoading(true);
     const userEmail = email.trim();
     
+    // Simpan role di authStore
+    useAuthStore.getState().setRole(role);
+
     // Simulate API request to generate OTP, then navigate to verification
     setTimeout(() => {
       setLoading(false);
-      navigation.navigate('OTPVerification', { contact: userEmail });
+      navigation.navigate('OTPVerification', { contact: userEmail, role: role });
     }, 400);
   };
 
@@ -42,6 +46,24 @@ export default function LoginScreen() {
         <Text style={styles.brandLabel}>Furab App</Text>
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Enter your details to access your services</Text>
+
+        {/* Role Selector */}
+        <View style={styles.roleSelector}>
+          <TouchableOpacity
+            style={[styles.roleOption, role === 'user' && styles.roleOptionActive]}
+            onPress={() => setRoleState('user')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.roleText, role === 'user' && styles.roleTextActive]}>Penumpang</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleOption, role === 'driver' && styles.roleOptionActive]}
+            onPress={() => setRoleState('driver')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.roleText, role === 'driver' && styles.roleTextActive]}>Driver</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email or Phone</Text>
@@ -156,6 +178,32 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     marginBottom: 22,
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 30,
+    padding: 4,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
+  roleOption: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 26,
+  },
+  roleOptionActive: {
+    backgroundColor: furapColors.primary,
+  },
+  roleText: {
+    ...furapTypography.bodyMd,
+    color: furapColors.neutral,
+    fontWeight: '600',
+  },
+  roleTextActive: {
+    color: furapColors.onPrimary,
   },
   label: {
     ...furapTypography.labelSm,

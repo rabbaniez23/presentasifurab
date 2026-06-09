@@ -16,10 +16,18 @@ export default function RegisterScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [confirmPasswordFocused, setConfirmPasswordFocused] = useState(false);
+  const [role, setRoleState] = useState<'user' | 'driver'>('user');
+  const [vehicleType, setVehicleType] = useState<'motorcycle' | 'car'>('motorcycle');
+  const [vehiclePlate, setVehiclePlate] = useState('');
 
   const handleRegister = () => {
     if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Validation Error', 'Please fill in all fields.');
+      return;
+    }
+
+    if (role === 'driver' && !vehiclePlate) {
+      Alert.alert('Validation Error', 'Please enter your vehicle plate number.');
       return;
     }
 
@@ -29,6 +37,12 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
+    
+    // Simpan data di store untuk auto-login setelah sukses
+    useAuthStore.getState().setRole(role);
+    if (role === 'driver') {
+      useAuthStore.getState().setVehicle({ plate: vehiclePlate, type: vehicleType });
+    }
     
     // Simulasi loading pendaftaran
     setTimeout(() => {
@@ -40,7 +54,12 @@ export default function RegisterScreen() {
             // Auto login setelah pendaftaran sukses
             useAuthStore.getState().setToken('dummy_jwt_token_for_testing');
             useAuthStore.getState().setUser({ contact: email, name: name });
-            navigation.replace('Home');
+            
+            if (role === 'driver') {
+              navigation.replace('DriverHome');
+            } else {
+              navigation.replace('Home');
+            }
           }
         }
       ]);
@@ -62,6 +81,24 @@ export default function RegisterScreen() {
           <Text style={styles.brandLabel}>Furab App</Text>
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Join us to access premium microservices</Text>
+
+          {/* Role Selector */}
+          <View style={styles.roleSelector}>
+            <TouchableOpacity
+              style={[styles.roleOption, role === 'user' && styles.roleOptionActive]}
+              onPress={() => setRoleState('user')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.roleText, role === 'user' && styles.roleTextActive]}>Penumpang</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.roleOption, role === 'driver' && styles.roleOptionActive]}
+              onPress={() => setRoleState('driver')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.roleText, role === 'driver' && styles.roleTextActive]}>Driver</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Full Name</Text>
@@ -118,6 +155,43 @@ export default function RegisterScreen() {
               onBlur={() => setConfirmPasswordFocused(false)}
             />
           </View>
+
+          {/* Conditional Driver Fields */}
+          {role === 'driver' && (
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Tipe Kendaraan</Text>
+                <View style={styles.vehicleTypeSelector}>
+                  <TouchableOpacity
+                    style={[styles.vehicleTypeOption, vehicleType === 'motorcycle' && styles.vehicleTypeOptionActive]}
+                    onPress={() => setVehicleType('motorcycle')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.vehicleTypeText, vehicleType === 'motorcycle' && styles.vehicleTypeTextActive]}>Motor</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.vehicleTypeOption, vehicleType === 'car' && styles.vehicleTypeOptionActive]}
+                    onPress={() => setVehicleType('car')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.vehicleTypeText, vehicleType === 'car' && styles.vehicleTypeTextActive]}>Mobil</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Plat Kendaraan</Text>
+                <TextInput
+                  style={[styles.input, vehiclePlate.length > 0 && styles.inputFocused]}
+                  placeholder="Misal: B 1234 ABC"
+                  placeholderTextColor={furapColors.neutral}
+                  value={vehiclePlate}
+                  onChangeText={setVehiclePlate}
+                  autoCapitalize="characters"
+                />
+              </View>
+            </>
+          )}
 
           <TouchableOpacity 
             style={styles.button}
@@ -206,6 +280,32 @@ const styles = StyleSheet.create({
     marginBottom: 28,
     color: furapColors.secondary,
   },
+  roleSelector: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.4)',
+    borderRadius: 30,
+    padding: 4,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+  },
+  roleOption: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 26,
+  },
+  roleOptionActive: {
+    backgroundColor: furapColors.primary,
+  },
+  roleText: {
+    ...furapTypography.bodyMd,
+    color: furapColors.neutral,
+    fontWeight: '600',
+  },
+  roleTextActive: {
+    color: furapColors.onPrimary,
+  },
   inputContainer: {
     marginBottom: 18,
   },
@@ -221,6 +321,31 @@ const styles = StyleSheet.create({
   inputFocused: {
     borderColor: furapColors.primary,
     backgroundColor: '#FFFFFF',
+  },
+  vehicleTypeSelector: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  vehicleTypeOption: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: furapColors.neutral,
+    backgroundColor: 'transparent',
+  },
+  vehicleTypeOptionActive: {
+    borderColor: furapColors.primary,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  vehicleTypeText: {
+    ...furapTypography.bodyMd,
+    color: furapColors.neutral,
+  },
+  vehicleTypeTextActive: {
+    color: furapColors.primary,
+    fontWeight: '600',
   },
   button: {
     ...furapGlass.buttonPrimary,

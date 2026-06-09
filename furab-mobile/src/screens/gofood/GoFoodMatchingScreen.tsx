@@ -19,20 +19,19 @@ export default function GoFoodMatchingScreen() {
   const [timer, setTimer] = useState(5);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          navigation.replace('GoFoodTracking', {
-            merchantName,
-            items,
-            totalPrice,
-            grandTotal
-          });
-          return 0;
-        }
-        return prev - 1;
+    if (timer <= 0) {
+      navigation.replace('GoFoodTracking', {
+        merchantName,
+        items,
+        totalPrice,
+        grandTotal
       });
+    }
+  }, [timer, navigation, merchantName, items, totalPrice, grandTotal]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimer((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => clearInterval(interval);

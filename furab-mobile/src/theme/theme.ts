@@ -59,6 +59,8 @@ export const furapColors = {
   neutral: '#717171',          // Info/Metadata
   border: 'rgba(255, 255, 255, 0.7)',
   error: '#BA1A1A',
+  success: '#34C759',
+  warning: '#FFCC00',
   accent: '#FFC72C', // Gold accent for ratings and highlight tags
   
   // Glass variants
@@ -75,6 +77,34 @@ export const furapTypography = {
     fontWeight: '700' as const,
     color: furapColors.primary,
     letterSpacing: -0.8,
+  },
+  displayMd: {
+    fontFamily: Platform.OS === 'ios' ? 'Manrope-Bold' : 'sans-serif-condensed',
+    fontSize: 32,
+    fontWeight: '700' as const,
+    color: furapColors.primary,
+    letterSpacing: -0.6,
+  },
+  headingLg: {
+    fontFamily: Platform.OS === 'ios' ? 'Manrope-Bold' : 'sans-serif-medium',
+    fontSize: 28,
+    fontWeight: '700' as const,
+    color: furapColors.primary,
+    letterSpacing: -0.5,
+  },
+  headingMd: {
+    fontFamily: Platform.OS === 'ios' ? 'Manrope-SemiBold' : 'sans-serif-medium',
+    fontSize: 24,
+    fontWeight: '600' as const,
+    color: furapColors.primary,
+    letterSpacing: -0.4,
+  },
+  headingSm: {
+    fontFamily: Platform.OS === 'ios' ? 'Manrope-SemiBold' : 'sans-serif-medium',
+    fontSize: 20,
+    fontWeight: '600' as const,
+    color: furapColors.primary,
+    letterSpacing: -0.2,
   },
   headlineMd: {
     fontFamily: Platform.OS === 'ios' ? 'Manrope-SemiBold' : 'sans-serif-medium',
@@ -94,6 +124,24 @@ export const furapTypography = {
     fontSize: 15,
     fontWeight: '400' as const,
     color: furapColors.secondary,
+  },
+  bodySm: {
+    fontFamily: Platform.OS === 'ios' ? 'Manrope-Regular' : 'sans-serif',
+    fontSize: 13,
+    fontWeight: '400' as const,
+    color: furapColors.secondary,
+  },
+  labelLg: {
+    fontFamily: Platform.OS === 'ios' ? 'Manrope-Bold' : 'sans-serif-medium',
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: furapColors.primary,
+  },
+  labelMd: {
+    fontFamily: Platform.OS === 'ios' ? 'Manrope-Bold' : 'sans-serif-medium',
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: furapColors.primary,
   },
   labelSm: {
     fontFamily: Platform.OS === 'ios' ? 'Manrope-Bold' : 'sans-serif-medium',

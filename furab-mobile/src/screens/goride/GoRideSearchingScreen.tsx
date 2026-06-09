@@ -20,25 +20,20 @@ export default function GoRideSearchingScreen() {
   const [searchTimer, setSearchTimer] = useState(120);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSearchTimer((prev) => {
-        if (prev <= 10) {
-          clearInterval(interval);
-          navigation.replace('GoRideTracking', {
-            pickup,
-            destination,
-            selectedPackage,
-            selectedPayment
-          });
-          return 0;
-        }
-        return prev - 20;
+    if (searchTimer <= 10) {
+      navigation.replace('GoRideTracking', {
+        pickup,
+        destination,
+        selectedPackage,
+        selectedPayment
       });
+    }
+  }, [searchTimer, navigation, pickup, destination, selectedPackage, selectedPayment]);
 
-      setSearchRadius((prev) => {
-        if (prev >= 20) return 20;
-        return prev + 5;
-      });
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSearchTimer((prev) => (prev > 10 ? prev - 20 : 0));
+      setSearchRadius((prev) => (prev >= 20 ? 20 : prev + 5));
     }, 2000);
 
     return () => clearInterval(interval);
