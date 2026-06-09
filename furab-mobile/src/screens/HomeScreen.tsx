@@ -415,7 +415,11 @@ export default function HomeScreen() {
 
               <View style={styles.divider} />
 
-              <TouchableOpacity style={styles.settingsItem} activeOpacity={0.7}>
+              <TouchableOpacity 
+                style={styles.settingsItem} 
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('HelpCenter')}
+              >
                 <View style={styles.settingsItemLeft}>
                   <HelpCircle color={furapColors.primary} size={20} style={{ marginRight: 12 }} />
                   <Text style={styles.settingsItemText}>Help Center</Text>
